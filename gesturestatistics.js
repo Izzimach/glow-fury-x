@@ -21,11 +21,14 @@ pc.script.create('gesturestatistics', function (context) {
     Gesturestatistics.prototype = {
         // Called once after all resources are loaded and before the first update
         initialize: function () {
-            this.entity.script.send('gestureprocessor','linkGestureStatisticsComponent',this);
         },
 
         // Called every frame, dt is time in seconds since last update
         update: function (dt) {
+        },
+
+        getComponentReference: function() {
+            return this;
         },
         
         analyzeGesture: function(gesturepath) {

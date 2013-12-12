@@ -12,6 +12,8 @@ pc.script.create('gestureprocessor', function (context) {
         this.gesturing = false;
         this.gesturehysteresis = 5;
         this.gesturestats = null;
+
+        this.gesturesallowed = true;
         
         // Disabling the context menu stops the browser displaying a menu when 
         // you right-click the page
@@ -29,14 +31,20 @@ pc.script.create('gestureprocessor', function (context) {
         // Called once after all resources are loaded and before the first update
         initialize: function () {
             
-            this.target = context.root.findByName("BattleBard");
+            //this.target = context.root.findByName("BattleBard");
             this.mainCamera = pc.fw.CameraComponent.camera;
             //console.log(this.target);
-            
+            this.gesturestats = this.entity.script.gesturestatistics;
+
         },
         
-        linkGestureStatisticsComponent: function(gesturestats) {
-            this.gesturestats = gesturestats;
+        enableGestures: function(enabled) {
+            this.gesturesallowed = enabled;
+            // if we're in the middle of a gesture nuke it
+            if (enabled === false && this.isGesturing === true)
+            {
+                this.isGesturing = false;
+            }
         },
 
         // Called every frame, dt is time in seconds since last update
@@ -50,6 +58,7 @@ pc.script.create('gestureprocessor', function (context) {
         //
         
         startGesture: function(screenx, screeny) {
+            if (this.gesturesallowed === false) { return; }
             this.isGesturing = true;
             this.gesturetarget = this.findCombatTarget(screenx, screeny);
             this.gesturetargettime = 0;
@@ -58,6 +67,7 @@ pc.script.create('gestureprocessor', function (context) {
         },
         
         dragGesture: function(screenx, screeny) {
+            if (this.gesturesallowed === false) { return; }
             if (this.isGesturing) {
                 this.gesturepath.push([screenx, screeny]);
                 this.checkGestureTarget(screenx, screeny);
@@ -65,6 +75,7 @@ pc.script.create('gestureprocessor', function (context) {
         },
         
         endGesture: function(screenx, screeny) {
+            if (this.gesturesallowed === false) { return; }
             if (this.isGesturing)
             {
                 this.gesturepath.push([screenx,screeny]);
@@ -75,29 +86,29 @@ pc.script.create('gestureprocessor', function (context) {
         },
         
         checkGestureTarget: function(screenx, screeny) {
-                var target = this.findCombatTarget(screenx, screeny);
-                // when the gesture moves over a new target (a new actor, or
-                // open space) it has to remain over that new target for a few frames
-                // before the new target is commited, to prevent single-frame glitches.
-                if (target !== this.gesturetarget)
+            var target = this.findCombatTarget(screenx, screeny);
+            // when the gesture moves over a new target (a new actor, or
+            // open space) it has to remain over that new target for a few frames
+            // before the new target is commited, to prevent single-frame glitches.
+            if (target !== this.gesturetarget)
+            {
+                this.gesturetarget = target;
+                this.gesturetargettime = 1;
+            } else {
+                this.gesturetargettime += 1;
+                if (this.gesturetargettime > this.gesturehysteresis)
                 {
-                    this.gesturetarget = target;
-                    this.gesturetargettime = 1;
-                } else {
-                    this.gesturetargettime += 1;
-                    if (this.gesturetargettime > this.gesturehysteresis)
-                    {
-                        // add this target if it's not already there
-                        if (this.gesturetargetlist.length === 0 ||
-                            _.last(this.gesturetargetlist) !== this.gesturetarget) {
-                            this.gesturetargetlist.push(this.gesturetarget);
-                            console.log("gesture target added: ", this.gesturetarget === null ? "null" : this.gesturetarget.name);
-                            if (this.gesturetarget !== null) {
-                                this.checkForCompleteGesture();
-                            }
+                    // add this target if it's not already there
+                    if (this.gesturetargetlist.length === 0 ||
+                        _.last(this.gesturetargetlist) !== this.gesturetarget) {
+                        this.gesturetargetlist.push(this.gesturetarget);
+                        console.log("gesture target added: ", this.gesturetarget === null ? "null" : this.gesturetarget.name);
+                        if (this.gesturetarget !== null) {
+                            this.checkForCompleteGesture();
                         }
                     }
                 }
+            }
         },
         
         checkForCompleteGesture: function() {
@@ -107,6 +118,17 @@ pc.script.create('gestureprocessor', function (context) {
             // is this recognized gesture?
             var gestureclass = this.gesturestats.classifyGesture(this.gesturepath, stats);
             pc.log.write("gesture class=" + gestureclass);
+            if (this.gesturetargetlist.length > 0)
+            {
+                for (var ix=0; ix < this.gesturetargetlist.length; ix++)
+                {
+                    var curtarget = this.gesturetargetlist[ix];
+                    if (curtarget !== null)
+                    {
+                        curtarget.playAction('argh');
+                    }
+                }
+            }
         },
         
         //
@@ -117,7 +139,7 @@ pc.script.create('gestureprocessor', function (context) {
  
             // Finally update the cube's world-space position
             //this.entity.setPosition(this.pos);
-            if (context.mouse.isPressed(pc.input.MOUSEBUTTON_LEFT))
+            if (context.mouse.isPressed(pc.input.MOUSEBUTTON_LEFT) && this.gesturesallowed)
             {
                 //var target = this.findCombatTarget(event.x, event.y);
                 //if (target !== null) { console.log(target.getName()); }
@@ -127,23 +149,17 @@ pc.script.create('gestureprocessor', function (context) {
  
         onMouseDown: function (event) {
 
-            if (event.button === pc.input.MOUSEBUTTON_LEFT) {
+            if (event.button === pc.input.MOUSEBUTTON_LEFT && this.gesturesallowed) {
                 this.startGesture(event.x,event.y);
             }
-            if (event.button === pc.input.MOUSEBUTTON_LEFT && this.target) {
-                //this.target.setPosition(this.pos);
-                
-                //this.entity.primitive.color = new pc.Color(1,0,0);
-                var target = this.findCombatTarget(event.x, event.y);
-                if (target !== null) {
-                    console.log(target.getName());
-                    this.entity.script.send('shakeycamera','addShake',1);
-                }
-            }
+
         },
         
         onMouseUp : function (event) {
-            this.endGesture(event.x,event.y);
+            if (this.gesturesallowed)
+            {
+                this.endGesture(event.x,event.y);
+            }
         },
         
         findCombatTarget: function(screenx, screeny) {
@@ -168,7 +184,15 @@ pc.script.create('gestureprocessor', function (context) {
                 var normal = result.normal;
                 
                 //console.log(entity.getName());
-                target = result.entity;
+                var collidertarget = result.entity;
+
+                // hopefully there is a link in this collider back to the combat actor
+                target = collidertarget.script.send('combatactorcollider','getCombatActor');
+                if (typeof target === 'undefined')
+                {
+                    pc.log.write("error: couldn't find combat actor for collider " + collidertarget.getName());
+                    target = null;
+                }
             });
             
             return target;
