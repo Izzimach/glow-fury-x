@@ -1,10 +1,11 @@
 pc.script.create('gesturestatistics', function (context) {
+    
     // Creates a new Gesturestatistics instance
     var Gesturestatistics = function (entity) {
         this.entity = entity;
     };
     
-    // private function to compute cross-produce
+    // private function to compute normalized cross-product
     function crossvec2(v1, v2) {
         var v1x = v1[0];
         var v1y = v1[1];
@@ -31,7 +32,13 @@ pc.script.create('gesturestatistics', function (context) {
             var results = {};
             if (gesturepath.length < 2)
             {
-                return results;
+                return {
+                    gesturelength:0,
+                    endpointdistance:0,
+                    eig1:0.01,
+                    eig2:0.01,
+                    crankangle:0
+                };
             }
             
             //
@@ -111,8 +118,11 @@ pc.script.create('gesturestatistics', function (context) {
                     pc.math.vec2.set(dP1,p1[0] - Xmean, p1[1] - Ymean);
                     pc.math.vec2.set(dP2,p2[0] - Xmean, p2[1] - Ymean);
                     var segmentcross = crossvec2(dP1, dP2);
-                    var segmentangle = Math.asin(segmentcross);
-                    totalangle += segmentangle;
+                    if (segmentcross > -1 && segmentcross < 1)
+                    {
+                        var segmentangle = Math.asin(segmentcross);
+                        totalangle += segmentangle;
+                    }
             }
             //results.totalcrankangle = -totalangle; // clockwise is positive
             results.crankangle = totalangle;

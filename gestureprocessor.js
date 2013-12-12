@@ -1,4 +1,5 @@
 pc.script.create('gestureprocessor', function (context) {
+    
     // Creates a new Gestureprocessor instance
     var Gestureprocessor = function (entity) {
         this.entity = entity;
