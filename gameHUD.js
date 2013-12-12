@@ -1,7 +1,7 @@
 pc.script.create('gameHUD', function (context) {
 
-    var gesturebarcss = "#gesturebarframe { position: absolute; bottom: 10px; left:0; right:0; margin:auto; height: 20px; width: 80%; border: 5px solid black; background: black; }"+
-        "#gesturebarbox {margin:0; background: #8f8; width:100%; height:100%; border: 0px; margin:0px;}";
+    var gesturebarcss = "#gesturebarframe { position: absolute; bottom: 10px; left:0; right:0; margin:auto; height: 20px; width: 80%; border: 5px solid black; border-radius: 10px; background: black; }"+
+        "#gesturebarbox {margin:0; background: #8f8; width:100%; height:100%; border: 0px; border-radius: 5px; margin:0px;}";
 
     var gameHUD = function (entity) {
         this.entity = entity;
@@ -46,7 +46,7 @@ pc.script.create('gameHUD', function (context) {
             //this.setText('GAME OVER');
             this.setVisibility(true);
 
-            this.setGestureCurrentValue(50);
+            //this.setGestureCurrentValue(50);
         },
 
         // Some utility functions that can be called from other game scripts
