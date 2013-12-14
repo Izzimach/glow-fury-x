@@ -43,6 +43,9 @@ pc.script.create('combatactor', function (context) {
             this.health = this.descriptor.startinghealth;
 
             linkCollidersToCombatActor(this.entity, this);
+
+            var mainscenenode = this.entity.getRoot().findByName("Combat Scene");
+            mainscenenode.script.send('gameHUD', 'addCombatActor', this);
         },
 
         getComponentReference: function() {
