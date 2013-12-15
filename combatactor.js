@@ -4,10 +4,14 @@ pc.script.create('combatactor', function (context) {
     // the containing entity
     var actordescriptors = {
         'BattleBard': {
-            startinghealth: 10
+            startinghealth: 10,
+            defaultanimation: 'bard_idle',
+            defaultanimationspeed: 0.7
         },
         'Goblin': {
-            startinghealth: 5
+            startinghealth: 5,
+            defaultanimation: 'bard_idle',
+            defaultanimationspeed: 0.6
         }
     };
 
@@ -32,7 +36,10 @@ pc.script.create('combatactor', function (context) {
 
         this.descriptor = null;
         this.health = 0;
+        this.colliders = [];
 
+        this.playingoneshotanimation = false;
+        this.oneshottimeleft = 0;
     };
 
     CombatActor.prototype = {
@@ -46,6 +53,8 @@ pc.script.create('combatactor', function (context) {
 
             var mainscenenode = this.entity.getRoot().findByName("Combat Scene");
             mainscenenode.script.send('gameHUD', 'addCombatActor', this);
+
+            this.playDefaultAnimation();
         },
 
         getComponentReference: function() {
@@ -54,6 +63,7 @@ pc.script.create('combatactor', function (context) {
         
         // Called every frame, dt is time in seconds since last update
         update: function (dt) {
+            this.manageAnimation(dt);
         },
 
         // called to make the actor perform a certain action
@@ -63,6 +73,36 @@ pc.script.create('combatactor', function (context) {
         // 3. a {x,y,z} target location
         playAction: function (actionname, actiontarget) {
             pc.log.write("action sent:" + actionname + " to combat actor " + this.entity.getName());
+            this.playOneShotAnimation('bard_bigstrike',0.9,4.0);
+        },
+
+        applyDamage: function (damageamount) {
+
+        },
+
+        manageAnimation: function (dt) {
+            if (this.playingoneshotanimation)
+            {
+                this.oneshottimeleft -= dt;
+                if (this.oneshottimeleft < 0)
+                {
+                    this.playingoneshotanimation = false;
+                    // switch back to the default (idle) animation
+                    this.playDefaultAnimation();
+                }
+            }
+        },
+
+        playDefaultAnimation: function() {
+            this.entity.animation.speed = this.descriptor.defaultanimationspeed;
+            this.entity.animation.play(this.descriptor.defaultanimation,0.5);
+        },
+
+        playOneShotAnimation: function(name, duration, speed) {
+            this.playingoneshotanimation = true;
+            this.oneshottimeleft = duration;
+            this.entity.animation.speed = speed;
+            this.entity.animation.play(name,0.1);
         }
 
     };

@@ -43,14 +43,12 @@ pc.script.create('gameHUD', function (context) {
             return r;
             }
 
-    var worldToScreen = function(cameranode, device, point) {
+    var worldToScreen = function(cameranode, width, height, point) {
         var projMat, wtm = cameranode.getWorldTransform(), 
             viewMat = pc.math.mat4.invert(wtm), 
             pvm = pc.math.mat4.create(), 
             point2d = pc.math.vec4.create();
-        var width = parseInt(device.canvas.style.width);
-        var height = parseInt(device.canvas.style.height);
-        projMat = cameranode.getProjectionMatrix();//pc.math.mat4.makePerspective(cameranode._fov, width / height, cameranode._nearClip, cameranode._farClip);
+        projMat = cameranode.getProjectionMatrix();
         pc.math.mat4.multiply(projMat, viewMat, pvm);
         multiplyMatVec3(point, 1, pvm, point2d);
         var denom = point2d[3] || 1;
@@ -101,14 +99,16 @@ pc.script.create('gameHUD', function (context) {
 
         update: function(dt) {
             var device = this.context.graphicsDevice;
+            var screenwidth = parseInt(device.canvas.style.width);
+            var screenheight = parseInt(device.canvas.style.height);
 
             // reposition combat actor health bars
             _.each(this.combatactors, function(gameobjects, guid, list) {
                 var combatactorcomponent = gameobjects.actor;
                 var combatactorHUD = gameobjects.HUD;
                 var cameranode = this.HUDcamera.camera.camera;
-                var screencoords = worldToScreen(cameranode, device, combatactorcomponent.entity.getPosition());
-                screencoords[1] = screencoords[1] - 90;
+                var screencoords = worldToScreen(cameranode, screenwidth, screenheight, combatactorcomponent.entity.getPosition());
+                screencoords[1] = screencoords[1] - screenheight * 0.13;
                 combatactorHUD.style.top = screencoords[1].toString() + "px";
                 combatactorHUD.style.left = screencoords[0].toString() + "px";
             }, this);
