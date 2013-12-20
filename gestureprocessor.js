@@ -10,7 +10,7 @@ pc.script.create('gestureprocessor', function (context) {
         this.gesturepath = [];
         this.gesturetargetlist = [];
         this.gesturing = false;
-        this.gesturehysteresis = 5;
+        this.gesturehysteresis = 3;
         this.gesturestats = null;
 
         this.gesturesallowed = true;
@@ -40,11 +40,17 @@ pc.script.create('gestureprocessor', function (context) {
         
         enableGestures: function(enabled) {
             this.gesturesallowed = enabled;
+
             // if we're in the middle of a gesture nuke it
             if (enabled === false && this.isGesturing === true)
             {
                 this.isGesturing = false;
             }
+
+            // some data persists between gestures but is reset at the end of the
+            // player turn
+            this.gesturetarget = null;
+            this.defaultactor = null;
         },
 
         // Called every frame, dt is time in seconds since last update
@@ -63,6 +69,7 @@ pc.script.create('gestureprocessor', function (context) {
             this.gesturetarget = this.findCombatTarget(screenx, screeny);
             this.gesturetargettime = 0;
             this.gesturepath = [ [screenx, screeny] ];
+            this.precedinggestures = [];
             this.gesturetargetlist = (this.gesturetarget !== null) ? [this.gesturetarget] : [];
         },
         
@@ -80,7 +87,7 @@ pc.script.create('gestureprocessor', function (context) {
             {
                 this.gesturepath.push([screenx,screeny]);
                 this.checkGestureTarget(screenx, screeny);
-                this.checkForCompleteGesture();
+                this.checkForCompleteGesture(false);
                 this.isGesturing = false;
             }
         },
@@ -102,35 +109,87 @@ pc.script.create('gestureprocessor', function (context) {
                     if (this.gesturetargetlist.length === 0 ||
                         _.last(this.gesturetargetlist) !== this.gesturetarget) {
                         this.gesturetargetlist.push(this.gesturetarget);
-                        console.log("gesture target added: ", this.gesturetarget === null ? "null" : this.gesturetarget.name);
+                        console.log("gesture target added: ", this.gesturetarget === null ? "null" : this.gesturetarget.entity.name);
                         if (this.gesturetarget !== null) {
-                            this.checkForCompleteGesture();
+                            this.checkForCompleteGesture(true);
                         }
                     }
                 }
             }
         },
         
-        checkForCompleteGesture: function() {
+        checkForCompleteGesture: function(inmidgesture) {
             // grab gesture stats of the gesture path
             var stats = this.gesturestats.analyzeGesture(this.gesturepath);
             
             // is this recognized gesture?
             var gestureclass = this.gesturestats.classifyGesture(this.gesturepath, stats);
             pc.log.write("gesture class=" + gestureclass);
-            if (this.gesturetargetlist.length > 0)
-            {
-                for (var ix=0; ix < this.gesturetargetlist.length; ix++)
-                {
-                    var curtarget = this.gesturetargetlist[ix];
-                    if (curtarget !== null)
-                    {
-                        curtarget.playAction('argh');
-                    }
-                }
+
+            // process the targets based on attack types
+            if (gestureclass === this.gesturestats.STRAIGHTLINE) {
+                this.dispatchStraightLineGesture(stats);
+                this.precedinggestures.push(gestureclass);
+            } else if (gestureclass === this.gesturestats.TAP && !inmidgesture && this.precedinggestures.length < 1) {
+                // can't produce "tap" gestures mid-gesture or if the gesture has already produced some action
+                this.dispatchTapGesture(stats);
+                this.precedinggestures.push(gestureclass);
             }
         },
         
+        dispatchStraightLineGesture: function (stats) {
+            var gestureactors = this.findTwoRecentEnemies();
+            if (gestureactors && gestureactors[0].team === "player") {
+                var chargesource = gestureactors[0];
+                var chargetarget = gestureactors[1];
+                chargesource.playAction('chargeattack', chargetarget);
+
+                this.defaultactor = chargesource;
+
+                // reset gesture path and target data to the last target and screen point
+                this.gesturepath = [_.last(this.gesturepath)];
+            }
+        },
+
+        dispatchTapGesture: function (stats) {
+            var taptarget = _.last(_.filter(this.gesturetargetlist, function(x){return x !== null;}));
+            if (taptarget &&
+                taptarget.team !== "player" &&
+                this.defaultactor)
+            {
+                var striker = this.defaultactor;
+                var striketarget = taptarget;
+                striker.playAction('strike', striketarget);
+            }
+        },
+
+        dispatchRightwardCircleGesture: function (stats) {
+
+        },
+
+        dispatchLeftwardCircleGesture: function (stats) {
+
+        },
+
+        findTwoRecentEnemies: function() {
+            var validtargets = _.filter(this.gesturetargetlist, function(x){ return (x !== null);});
+            if (validtargets.length > 0)
+            {
+                var chargetarget = _.last(validtargets);
+
+                // the charge source is the most previous gesture target of the opposing team
+                var opposingtargets = _.filter(validtargets, function(x){ return (x.team !== chargetarget.team);});
+
+                if (opposingtargets.length > 0) {
+                    var chargesource = _.last(opposingtargets);
+                    return [chargesource, chargetarget];
+                }
+            }
+
+            // no valid pair of enemies found
+            return false;
+        },
+
         //
         // the mouse bridge: convert mouse events into gesture method calls
         //
