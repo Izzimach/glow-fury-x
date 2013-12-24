@@ -138,6 +138,8 @@ pc.script.create('gestureprocessor', function (context) {
         },
         
         dispatchStraightLineGesture: function (stats) {
+            if (_.last(this.gesturetargetlist) === null) { return; }
+
             var gestureactors = this.findTwoRecentEnemies();
             if (gestureactors && gestureactors[0].team === "player") {
                 var chargesource = gestureactors[0];
@@ -152,7 +154,7 @@ pc.script.create('gestureprocessor', function (context) {
         },
 
         dispatchTapGesture: function (stats) {
-            var taptarget = _.last(_.filter(this.gesturetargetlist, function(x){return x !== null;}));
+            var taptarget = _.last(this.gesturetargetlist);
             if (taptarget &&
                 taptarget.team !== "player" &&
                 this.defaultactor)

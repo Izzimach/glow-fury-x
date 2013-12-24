@@ -23,17 +23,17 @@ pc.script.create('combatactor', function (context) {
                 damageamount: 1,
             },
             strike2: {
-                animationname: 'bard_spinstrike',
+                animationname: 'bard_bigstrike',
                 animationduration: 0.5,
-                animationspeed: 4,
-                screenshakeat: 0.01,
+                animationspeed: 8,
+                screenshakeat: 0.1,
                 damageamount: 1,
             },
             strike3: {
                 animationname: 'bard_bigstrike',
                 animationduration: 0.5,
-                animationspeed: 4,
-                screenshakeat: 0.01,
+                animationspeed: 8,
+                screenshakeat: 0.1,
                 damageamount: 1,
             }
         },
@@ -86,6 +86,10 @@ pc.script.create('combatactor', function (context) {
 
         this.isscreenshakequeued = false;
         this.screenshakeat = 0;
+    
+        // for tracking combo attacks
+        this.combocount = 0;
+        this.combotarget = null;
     };
 
     CombatActor.prototype = {
@@ -125,6 +129,21 @@ pc.script.create('combatactor', function (context) {
         // 3. a {x,y,z} target location
         playAction: function (actionname, actiontarget) {
             pc.log.write("action sent:" + actionname + " to combat actor " + this.entity.getName());
+
+            // handle combo strikes
+            if (this.combotarget === actiontarget &&
+                actionname === "strike")
+            {
+                this.combocount = (this.combocount % 3) + 1;
+                if (this.combocount > 1) {
+                    actionname = "strike" + this.combocount.toString();
+                }
+            }
+            else
+            {
+                this.combocount = 0;
+            }
+            this.combotarget = actiontarget;
 
             // lookup the action; if it exists, process the information in terms of animation, screen shake, etc.
             var actiondata = this.descriptor[actionname];
