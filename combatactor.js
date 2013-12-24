@@ -75,6 +75,7 @@ pc.script.create('combatactor', function (context) {
 
         this.descriptor = null;
         this.health = 0;
+        this.isalive = true;
         this.colliders = [];
 
         this.isplayingoneshotanimation = false;
@@ -94,6 +95,7 @@ pc.script.create('combatactor', function (context) {
             this.descriptor = actordescriptors[entityname];
             this.team = this.descriptor.defaultteam || "monsters";
             this.health = this.descriptor.startinghealth;
+            this.maxhealth = this.health;
 
             linkCollidersToCombatActor(this.entity, this);
 
@@ -136,10 +138,25 @@ pc.script.create('combatactor', function (context) {
                     this.queueScreenShake(actiondata.screenshakeat);
                 }
                 this.chargeTarget(actiontarget);
+
+                // deal damage?
+                if (actiondata.damageamount) {
+                    actiontarget.applyDamage(actiondata.damageamount, this);
+                }
             }
         },
 
-        applyDamage: function (damageamount) {
+        applyDamage: function (damageamount, sourceactor) {
+            if (!this.isalive) return;
+
+            this.health = this.health - damageamount;
+            if (this.health <= 0) {
+             this.health = 0;
+             this.deathEvent(sourceactor);
+            }
+        },
+
+        deathEvent: function(sourceactor) {
 
         },
 

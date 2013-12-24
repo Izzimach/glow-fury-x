@@ -14,7 +14,7 @@ pc.script.create('gameHUD', function (context) {
             "margin-left:"+healthbarleftoffset+"px; " +
             "margin-top:"+healthbartopoffset+"px; " +
             "width:"+healthbarwidthpixels+"px; " +
-            "height:15px; border:2px solid black; background;black; }" +
+            "height:15px; border:2px solid black; background:black; }" +
 
         "#combatactorbox { pointer-events:none; margin:0px; background: green; width: 100%; height: 100%; border: 0px; }";
 
@@ -106,11 +106,15 @@ pc.script.create('gameHUD', function (context) {
             _.each(this.combatactors, function(gameobjects, guid, list) {
                 var combatactorcomponent = gameobjects.actor;
                 var combatactorHUD = gameobjects.HUD;
+                var combatactorhealthbar = gameobjects.healthbar;
                 var cameranode = this.HUDcamera.camera.camera;
                 var screencoords = worldToScreen(cameranode, screenwidth, screenheight, combatactorcomponent.entity.getPosition());
                 screencoords[1] = screencoords[1] - screenheight * 0.13;
                 combatactorHUD.style.top = screencoords[1].toString() + "px";
                 combatactorHUD.style.left = screencoords[0].toString() + "px";
+
+                var percentwidth = combatactorcomponent.health * 100 / combatactorcomponent.maxhealth;
+                combatactorhealthbar.style.width = Math.round(percentwidth).toString() + "%";
             }, this);
         },
 
@@ -140,7 +144,7 @@ pc.script.create('gameHUD', function (context) {
             this.container.appendChild(actorbarframe);
 
             // can't hash by-object, but we can use Guid of the entity
-            this.combatactors[actorcomponent.entity.getGuid()] = {actor:actorcomponent,HUD:actorbarframe};
+            this.combatactors[actorcomponent.entity.getGuid()] = {actor:actorcomponent,HUD:actorbarframe, healthbar: actorbarbox};
         },
 
         removeCombatActor: function (actor) {
