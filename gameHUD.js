@@ -97,10 +97,16 @@ pc.script.create('gameHUD', function (context) {
             this.HUDcamera = this.entity.getRoot().findByName("Camera");
         },
 
+        getComponentReference: function () {
+            return this;
+        },
+
         update: function(dt) {
             var device = this.context.graphicsDevice;
             var screenwidth = parseInt(device.canvas.style.width);
             var screenheight = parseInt(device.canvas.style.height);
+
+            var healthbarextraverticaloffset = -screenheight * 0.18;
 
             // reposition combat actor health bars
             _.each(this.combatactors, function(gameobjects, guid, list) {
@@ -109,7 +115,7 @@ pc.script.create('gameHUD', function (context) {
                 var combatactorhealthbar = gameobjects.healthbar;
                 var cameranode = this.HUDcamera.camera.camera;
                 var screencoords = worldToScreen(cameranode, screenwidth, screenheight, combatactorcomponent.entity.getPosition());
-                screencoords[1] = screencoords[1] - screenheight * 0.13;
+                screencoords[1] = screencoords[1] + healthbarextraverticaloffset;
                 combatactorHUD.style.top = screencoords[1].toString() + "px";
                 combatactorHUD.style.left = screencoords[0].toString() + "px";
 

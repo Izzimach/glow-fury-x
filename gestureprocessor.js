@@ -3,6 +3,7 @@ pc.script.create('gestureprocessor', function (context) {
     // Creates a new Gestureprocessor instance
     var Gestureprocessor = function (entity) {
         this.entity = entity;
+        this.context = context;
         
         // ray start/end instances are create here and reused to avoid creating lots of garbage
         this.raystart = pc.math.vec3.create();
@@ -14,6 +15,9 @@ pc.script.create('gestureprocessor', function (context) {
         this.gesturestats = null;
 
         this.gesturesallowed = true;
+
+        this.maxgesturelength = 0;
+        this.gesturelengthleft = 0;
         
         // Disabling the context menu stops the browser displaying a menu when 
         // you right-click the page
@@ -36,6 +40,8 @@ pc.script.create('gestureprocessor', function (context) {
             //console.log(this.target);
             this.gesturestats = this.entity.script.gesturestatistics;
 
+            this.gameHUD = this.entity.getRoot().findByName("Combat Scene").script.send('gameHUD','getComponentReference');
+            this.enableGestures(true);
         },
         
         enableGestures: function(enabled) {
@@ -51,10 +57,20 @@ pc.script.create('gestureprocessor', function (context) {
             // player turn
             this.gesturetarget = null;
             this.defaultactor = null;
+
+            var device = this.context.graphicsDevice;
+            var screenwidth = parseInt(device.canvas.style.width);
+            var screenheight = parseInt(device.canvas.style.height);
+
+            this.maxgesturelength = screenwidth;
+            this.gesturelengthleft = this.maxgesturelength;
+            this.gameHUD.setGestureMaxValue(this.maxgesturelength);
+            this.gameHUD.setGestureCurrentValue(this.gesturelengthleft);
         },
 
         // Called every frame, dt is time in seconds since last update
         update: function (dt) {
+            this.gameHUD.setGestureCurrentValue(this.gesturelengthleft);
         },
         
         //
@@ -76,7 +92,9 @@ pc.script.create('gestureprocessor', function (context) {
         dragGesture: function(screenx, screeny) {
             if (this.gesturesallowed === false) { return; }
             if (this.isGesturing) {
-                this.gesturepath.push([screenx, screeny]);
+                var newscreenpoint = [screenx,screeny];
+                this.consumeGestureLength(_.last(this.gesturepath), newscreenpoint);
+                this.gesturepath.push(newscreenpoint);
                 this.checkGestureTarget(screenx, screeny);
             }
         },
@@ -90,6 +108,14 @@ pc.script.create('gestureprocessor', function (context) {
                 this.checkForCompleteGesture(false);
                 this.isGesturing = false;
             }
+        },
+
+        consumeGestureLength: function (start, end) {
+            var dx = end[0] - start[0];
+            var dy = end[1] - start[1];
+            var dist = Math.sqrt(dx*dx+dy*dy);
+
+            this.gesturelengthleft -= dist;
         },
         
         checkGestureTarget: function(screenx, screeny) {
@@ -127,13 +153,19 @@ pc.script.create('gestureprocessor', function (context) {
             pc.log.write("gesture class=" + gestureclass);
 
             // process the targets based on attack types
-            if (gestureclass === this.gesturestats.STRAIGHTLINE) {
-                this.dispatchStraightLineGesture(stats);
-                this.precedinggestures.push(gestureclass);
-            } else if (gestureclass === this.gesturestats.TAP && !inmidgesture && this.precedinggestures.length < 1) {
-                // can't produce "tap" gestures mid-gesture or if the gesture has already produced some action
-                this.dispatchTapGesture(stats);
-                this.precedinggestures.push(gestureclass);
+            if (inmidgesture) {
+                // straight line gestures can be used for charging from one target to another
+                if (gestureclass === this.gesturestats.STRAIGHTLINE) {
+                    this.dispatchStraightLineGesture(stats);
+                    this.precedinggestures.push(gestureclass);
+                }
+            } else {
+                // gesture ends (left of mouse/touch) are when we can recognize taps
+                if (gestureclass === this.gesturestats.TAP && this.precedinggestures.length < 1) {
+                    // can't produce "tap" gestures mid-gesture or if the gesture has already produced some action
+                    this.dispatchTapGesture(stats);
+                    this.precedinggestures.push(gestureclass);
+                }
             }
         },
         
