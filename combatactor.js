@@ -10,6 +10,7 @@ pc.script.create('combatactor', function (context) {
             defaultanimationspeed: 0.7,
             chargeattack: {
                 animationname: 'bard_flipstrike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.7,
                 animationspeed: 5,
                 screenshakeat: 0.25,
@@ -17,6 +18,7 @@ pc.script.create('combatactor', function (context) {
             },
             strike: {
                 animationname: 'bard_strike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.5,
                 animationspeed: 10,
                 screenshakeat: 0.15,
@@ -24,6 +26,7 @@ pc.script.create('combatactor', function (context) {
             },
             strike2: {
                 animationname: 'bard_spinstrike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
@@ -31,6 +34,7 @@ pc.script.create('combatactor', function (context) {
             },
             strike3: {
                 animationname: 'bard_bigstrike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
@@ -44,6 +48,7 @@ pc.script.create('combatactor', function (context) {
             defaultanimationspeed: 0.6,
             strike: {
                 animationname: 'bard_bigstrike',
+                attacksound: 'clonk',
                 animationduration: 0.4,
                 animationspeed: 4,
                 screenshakeat: 0.2,
@@ -67,6 +72,20 @@ pc.script.create('combatactor', function (context) {
                 linkCollidersToCombatActor(currentnodechildren[ix], linkto);
             }
         }
+    }
+
+    function disableChildColliders(currentnode) {
+        currentnode.script.send('combatactorcollider','disableCollider');
+        var currentnodechildren = currentnode.getChildren();
+        for (var ix=0; ix < currentnodechildren.length; ix++) {
+            var childnode = currentnodechildren[ix];
+            // only look for colliders on entity objects
+            if (pc.fw.Entity.prototype.isPrototypeOf(childnode))
+            {
+                disableChildColliders(currentnodechildren[ix]);
+            }
+        }
+
     }
     
     // Creates a new Gestureprocessor instance
@@ -166,6 +185,11 @@ pc.script.create('combatactor', function (context) {
                 if (actiondata.damageamount) {
                     actiontarget.applyDamage(actiondata.damageamount, this);
                 }
+
+                // play sound?
+                if (actiondata.attacksound) {
+                    this.entity.audiosource.play(actiondata.attacksound);
+                }
             }
         },
 
@@ -185,6 +209,7 @@ pc.script.create('combatactor', function (context) {
             this.isalive = false;
             var mainscenenode = this.entity.getRoot().findByName("Combat Scene");
             mainscenenode.script.send('gameHUD', 'removeCombatActor', this);
+            disableChildColliders(this.entity);
 
         },
 
