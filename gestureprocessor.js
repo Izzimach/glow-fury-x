@@ -223,7 +223,7 @@ pc.script.create('gestureprocessor', function (context) {
         },
 
         findTwoRecentEnemies: function() {
-            var validtargets = _.filter(this.gesturetargetlist, function(x){ return (x !== null);});
+            var validtargets = _.compact(this.gesturetargetlist); // remove nulls
             if (validtargets.length > 0)
             {
                 var chargetarget = _.last(validtargets);

@@ -27,14 +27,14 @@ pc.script.create('combatactor', function (context) {
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
-                damageamount: 1,
+                damageamount: 2,
             },
             strike3: {
                 animationname: 'bard_bigstrike',
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
-                damageamount: 1,
+                damageamount: 3,
             }
         },
         'Goblin': {
@@ -42,11 +42,11 @@ pc.script.create('combatactor', function (context) {
             defaultteam: "monsters",
             defaultanimation: 'bard_idle',
             defaultanimationspeed: 0.6,
-            strike1: {
+            strike: {
                 animationname: 'bard_bigstrike',
                 animationduration: 0.4,
                 animationspeed: 4,
-                screenshakeat: 0,
+                screenshakeat: 0.2,
                 damageamount: 1
             }
         }
@@ -136,7 +136,11 @@ pc.script.create('combatactor', function (context) {
             {
                 this.combocount = (this.combocount % 3) + 1;
                 if (this.combocount > 1) {
-                    actionname = "strike" + this.combocount.toString();
+                    var comboactionname = "strike" + this.combocount.toString();
+                    // don't use unless the combo action is available
+                    if (typeof this.descriptor[comboactionname] !== "undefined") {
+                        actionname = comboactionname;
+                    }
                 }
             }
             else
@@ -216,9 +220,17 @@ pc.script.create('combatactor', function (context) {
 
         chargeTarget: function (targetactor) {
             // charge to the nearest side
+            var mylocation = this.entity.getPosition();
             var targetlocation = targetactor.entity.getPosition();
-            targetx = targetlocation[0] - 3.3;
+            targetx = targetlocation[0];
+
+            if (targetx < mylocation[0]) { targetx += 3.5; }
+            else if (targetx > mylocation[0]) { targetx -= 3.5; }
             this.dashTo(targetx, targetlocation[1], targetlocation[2]);
+        },
+
+        moveTo: function (targetlocation) {
+            this.dashTo(targetlocation[0], targetlocation[1], targetlocation[2]);
         },
 
         manageDashing: function (dt) {

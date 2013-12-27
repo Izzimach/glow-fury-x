@@ -41,15 +41,52 @@ pc.script.create('gameturn', function (context) {
                 case "precomputer":
                     this.switchTurn("computer");
                     this.gameHUD.setTitleText("Computer Turn", true);
+                    var actorteams = _.chain(this.gameHUD.combatactors).values().pluck('actor').groupBy('team').value();
+                    this.enemiesattacking = actorteams.monsters;
+                    this.enemiesresetting = [];
+                    this.playertargets = actorteams.player;
+                    this.timetonextenemyattack = 0.5;
                     break;
                 case "computer":
-                    this.switchTurn("preplayer");
+                    this.computerAttacks(dt);
+                    if (this.enemiesattacking.length < 1 &&
+                        this.enemiesresetting.length < 1) {
+                        this.switchTurn("preplayer");
+                    }
                     break;
                 default:
                     pc.log.write("Unknown turn " + this.currentturn);
                     this.switchTurn("preplayer");
                     break;
             }
+        },
+
+        computerAttacks: function (dt) {
+            if (this.timetonextenemyattack > 0) {
+                this.timetonextenemyattack -= dt;
+                return;
+            }
+
+            // reset any enemies that have already attacked
+            if (this.enemiesresetting.length > 0) {
+                var nextreset = _.first(this.enemiesresetting);
+                this.enemiesresetting.splice(0,1);
+
+                nextreset.moveTo(nextreset.startposition);
+            }
+
+            if (this.enemiesattacking.length > 0) {
+                var nextattacker = _.first(this.enemiesattacking);
+                this.enemiesattacking.splice(0,1);
+
+                var playertarget = this.playertargets[0];
+
+                nextattacker.startposition = pc.math.vec3.clone(nextattacker.entity.getPosition());
+                nextattacker.playAction('strike', playertarget);
+                this.enemiesresetting.push(nextattacker);
+            }
+
+            this.timetonextenemyattack = 0.5;
         },
 
         switchTurn: function(newturnname) {
