@@ -43,6 +43,10 @@ pc.script.create('gestureprocessor', function (context) {
             this.gameHUD = this.entity.getRoot().findByName("Combat Scene").script.send('gameHUD','getComponentReference');
             this.enableGestures(true);
         },
+
+        getComponentReference: function() {
+            return this;
+        }
         
         enableGestures: function(enabled) {
             this.gesturesallowed = enabled;
@@ -116,6 +120,14 @@ pc.script.create('gestureprocessor', function (context) {
             var dist = Math.sqrt(dx*dx+dy*dy);
 
             this.gesturelengthleft -= dist;
+        },
+
+        // consume a certain fraction/percent of the max gesture available. used for
+        // certain actions like tap attacks.
+        consumeGestureFraction: function (fractionalamount) {
+            var amount = this.maxgesturelength * fractionalamount;
+
+            this.gesturelengthleft -= amount;
         },
         
         checkGestureTarget: function(screenx, screeny) {
@@ -191,6 +203,9 @@ pc.script.create('gestureprocessor', function (context) {
                 taptarget.team !== "player" &&
                 this.defaultactor)
             {
+                // taps take up a certain gesture amount when use. The actual gesture
+                // is tiny and takes up little gesture distance, if any
+                this.consumeGestureFraction(0.1);
                 var striker = this.defaultactor;
                 var striketarget = taptarget;
                 striker.playAction('strike', striketarget);

@@ -1,6 +1,6 @@
 pc.script.create('gameHUD', function (context) {
 
-    var healthbarwidthpixels = 100;
+    var healthbarwidthpixels = 200;
     var healthbarleftoffset = -(healthbarwidthpixels/2);
     var healthbartopoffset = healthbarleftoffset;
 
@@ -14,9 +14,11 @@ pc.script.create('gameHUD', function (context) {
             "margin-left:"+healthbarleftoffset+"px; " +
             "margin-top:"+healthbartopoffset+"px; " +
             "width:"+healthbarwidthpixels+"px; " +
-            "height:15px; border:2px solid black; background:black; }" +
+            "height:15px; border:2px solid grey; background:black; }" +
 
-        "#combatactorbox { pointer-events:none; margin:0px; background: green; width: 100%; height: 100%; border: 0px; }";
+        "#combatactorbox { pointer-events:none; margin:0px; background: green; width: 100%; height: 100%; border: 0px; }" +
+
+        "#centertitle { pointer-events:none; margin:auto; background: black; border: 0px; }";
 
     var gameHUD = function (entity) {
         this.entity = entity;
@@ -106,7 +108,7 @@ pc.script.create('gameHUD', function (context) {
             var screenwidth = parseInt(device.canvas.style.width);
             var screenheight = parseInt(device.canvas.style.height);
 
-            var healthbarextraverticaloffset = -screenheight * 0.18;
+            var healthbarextraverticaloffset = -screenheight * 0.20;
 
             // reposition combat actor health bars
             _.each(this.combatactors, function(gameobjects, guid, list) {
