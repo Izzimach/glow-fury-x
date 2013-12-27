@@ -47,7 +47,7 @@ pc.script.create('combatactor', function (context) {
                 animationduration: 0.4,
                 animationspeed: 4,
                 screenshakeat: 0.2,
-                damageamount: 1
+                damageamount: 1.5
             }
         }
     };

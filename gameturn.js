@@ -37,6 +37,11 @@ pc.script.create('gameturn', function (context) {
                         this.gestureprocessor.enableGestures(false);
                         this.switchTurn("precomputer");
                     }
+                    // all enemies dead?
+                    if (!this.anyLeftOnTeam("monsters")) {
+                        this.gameHUD.setTitleText("Victory!");
+                        this.switchTurn("gameover");
+                    }
                     break;
                 case "precomputer":
                     this.switchTurn("computer");
@@ -53,12 +58,25 @@ pc.script.create('gameturn', function (context) {
                         this.enemiesresetting.length < 1) {
                         this.switchTurn("preplayer");
                     }
+                    // player dead?
+                    if (!this.anyLeftOnTeam("player")) {
+                        this.gameHUD.setTitleText("Defeat!");
+                        this.switchTurn("gameover");
+                    }
+                    break;
+                case "gameover":
+                    {}
                     break;
                 default:
                     pc.log.write("Unknown turn " + this.currentturn);
                     this.switchTurn("preplayer");
                     break;
             }
+        },
+
+        anyLeftOnTeam: function (teamname) {
+            var actors = _.values(this.gameHUD.combatactors);
+            return _.some(actors, function(x) {return x.actor.team === teamname;});
         },
 
         computerAttacks: function (dt) {
