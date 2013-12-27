@@ -18,6 +18,11 @@ pc.script.create('combatactorcollider', function (context) {
 
         getCombatActor: function () {
             return this.combatactor;
+        },
+
+        disableCollider: function() {
+            this.combatactor = null;
+            context.systems.collision.removeComponent(this.entity);
         }
     };
 
