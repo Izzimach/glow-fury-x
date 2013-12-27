@@ -23,7 +23,7 @@ pc.script.create('combatactor', function (context) {
                 damageamount: 1,
             },
             strike2: {
-                animationname: 'bard_bigstrike',
+                animationname: 'bard_spinstrike',
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
@@ -43,7 +43,7 @@ pc.script.create('combatactor', function (context) {
             defaultanimation: 'bard_idle',
             defaultanimationspeed: 0.6,
             strike1: {
-                animationname: 'bard_strike',
+                animationname: 'bard_bigstrike',
                 animationduration: 0.4,
                 animationspeed: 4,
                 screenshakeat: 0,
@@ -176,6 +176,11 @@ pc.script.create('combatactor', function (context) {
         },
 
         deathEvent: function(sourceactor) {
+            this.playOneShotAnimation('bard_falldown', 100.0, 1.0);
+            this.entity.animation.loop = false;
+            this.isalive = false;
+            var mainscenenode = this.entity.getRoot().findByName("Combat Scene");
+            mainscenenode.script.send('gameHUD', 'removeCombatActor', this);
 
         },
 
@@ -183,7 +188,7 @@ pc.script.create('combatactor', function (context) {
             if (this.isplayingoneshotanimation)
             {
                 this.oneshottimeleft -= dt;
-                if (this.oneshottimeleft < 0)
+                if (this.oneshottimeleft < 0 && this.isalive)
                 {
                     this.isplayingoneshotanimation = false;
                     // switch back to the default (idle) animation

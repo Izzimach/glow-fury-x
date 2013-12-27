@@ -14,7 +14,7 @@ pc.script.create('gestureprocessor', function (context) {
         this.gesturehysteresis = 3;
         this.gesturestats = null;
 
-        this.gesturesallowed = true;
+        this.gesturesallowed = false;
 
         this.maxgesturelength = 0;
         this.gesturelengthleft = 0;
@@ -41,12 +41,12 @@ pc.script.create('gestureprocessor', function (context) {
             this.gesturestats = this.entity.script.gesturestatistics;
 
             this.gameHUD = this.entity.getRoot().findByName("Combat Scene").script.send('gameHUD','getComponentReference');
-            this.enableGestures(true);
+            //this.enableGestures(true);
         },
 
         getComponentReference: function() {
             return this;
-        }
+        },
         
         enableGestures: function(enabled) {
             this.gesturesallowed = enabled;
@@ -62,14 +62,16 @@ pc.script.create('gestureprocessor', function (context) {
             this.gesturetarget = null;
             this.defaultactor = null;
 
-            var device = this.context.graphicsDevice;
-            var screenwidth = parseInt(device.canvas.style.width);
-            var screenheight = parseInt(device.canvas.style.height);
+            if (enabled) {
+                var device = this.context.graphicsDevice;
+                var screenwidth = parseInt(device.canvas.style.width);
+                var screenheight = parseInt(device.canvas.style.height);
 
-            this.maxgesturelength = screenwidth;
-            this.gesturelengthleft = this.maxgesturelength;
-            this.gameHUD.setGestureMaxValue(this.maxgesturelength);
-            this.gameHUD.setGestureCurrentValue(this.gesturelengthleft);
+                this.maxgesturelength = screenwidth;
+                this.gesturelengthleft = this.maxgesturelength;
+                this.gameHUD.setGestureMaxValue(this.maxgesturelength);
+                this.gameHUD.setGestureCurrentValue(this.gesturelengthleft);
+            }
         },
 
         // Called every frame, dt is time in seconds since last update

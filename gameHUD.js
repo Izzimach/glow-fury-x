@@ -5,22 +5,23 @@ pc.script.create('gameHUD', function (context) {
     var healthbartopoffset = healthbarleftoffset;
 
     var gesturebarcss = 
-        "#gesturebarframe { pointer-events:none; position: absolute; bottom: 10px; left:0; right:0; margin-left:auto; margin-right:auto; "+
-            "height: 20px; width: 80%; border: 5px solid black; border-radius: 10px; background: black; }" +
+        ".gesturebarframe { pointer-events:none; position: absolute; bottom: 10px; left:0; right:0; margin-left:auto; margin-right:auto; "+
+            "height: 20px; width: 80%; border: 5px solid black; border-radius: 10px; background: black; } " +
 
-        "#gesturebarbox { pointer-events:none; margin:0; background: #8f8; width:100%; height:100%; border: 0px; border-radius: 5px; }" +
+        ".gesturebarbox { pointer-events:none; margin:0; background: #8f8; width:100%; height:100%; border: 0px; border-radius: 5px; } " +
 
-        "#combatactorframe { pointer-events:none; position: absolute; left:0px; top:0px; " +
+        ".combatactorframe { pointer-events:none; position: absolute; left:0px; top:0px; " +
             "margin-left:"+healthbarleftoffset+"px; " +
             "margin-top:"+healthbartopoffset+"px; " +
             "width:"+healthbarwidthpixels+"px; " +
             "height:15px; border:2px solid grey; background:black; }" +
 
-        "#combatactorbox { pointer-events:none; margin:0px; background: green; width: 100%; height: 100%; border: 0px; }" +
+        ".combatactorbox { pointer-events:none; margin:0px; background: green; width: 100%; height: 100%; border: 0px; } " +
 
-        "#centertitle { pointer-events:none; margin:auto; background: black; border: 0px; }";
+        ".centertitle { pointer-events:none; position:absolute; top:0; bottom:0; left:0; right:0; background: transparent; margin:auto; border: 0px; text-align:center; width:30%; height:20%;"+
+        " font-size:xx-large; color:white; transform: scale(2,2); } ";
 
-    var gameHUD = function (entity) {
+        var gameHUD = function (entity) {
         this.entity = entity;
         this.maxgesturevalue = 100;
         this.currentgesturevalue = 100;
@@ -70,7 +71,7 @@ pc.script.create('gameHUD', function (context) {
 
             // Create a div centred inside the main canvas
             var div = document.createElement('div');
-            div.id = "gesturebarframe";
+            div.className = "gesturebarframe";
             /*div.style.position = 'absolute';
             div.style.width = '500px';
             div.style.top = '90%';
@@ -83,7 +84,7 @@ pc.script.create('gameHUD', function (context) {
 
             // create a sub-rectangle that will get re-size to show how much gesture is left
             var valuebar = document.createElement('div');
-            valuebar.id = 'gesturebarbox'
+            valuebar.className = 'gesturebarbox'
             div.appendChild(valuebar);
 
             // Grab the div that encloses PlayCanvas' canvas element
@@ -97,6 +98,13 @@ pc.script.create('gameHUD', function (context) {
             this.setVisibility(true);
 
             this.HUDcamera = this.entity.getRoot().findByName("Camera");
+
+            var titleblock = document.createElement('div');
+            titleblock.className = 'centertitle';
+            titleblock.style.visibility = 'hidden';
+            this.container.appendChild(titleblock);
+
+            this.centertitle = titleblock;
         },
 
         getComponentReference: function () {
@@ -124,6 +132,16 @@ pc.script.create('gameHUD', function (context) {
                 var percentwidth = combatactorcomponent.health * 100 / combatactorcomponent.maxhealth;
                 combatactorhealthbar.style.width = Math.round(percentwidth).toString() + "%";
             }, this);
+
+            // maybe fade out title text
+            if (this.fadetitle) {
+                this.fadetitletime -= dt;
+                if (this.fadetitletime < 0) {
+                    this.fadetitle = false;
+                    this.centertitle.style.visibility = 'hidden';
+                    this.centertitle.id = "";
+                }
+            }
         },
 
         // Some utility functions that can be called from other game scripts
@@ -143,10 +161,10 @@ pc.script.create('gameHUD', function (context) {
 
         addCombatActor: function (actorcomponent) {
             var actorbarframe = document.createElement('div');
-            actorbarframe.id = 'combatactorframe';
+            actorbarframe.className = 'combatactorframe';
 
             var actorbarbox = document.createElement('div');
-            actorbarbox.id = 'combatactorbox';
+            actorbarbox.className = 'combatactorbox';
             actorbarframe.appendChild(actorbarbox);
 
             this.container.appendChild(actorbarframe);
@@ -156,12 +174,23 @@ pc.script.create('gameHUD', function (context) {
         },
 
         removeCombatActor: function (actor) {
-            delete this.combatactors[actor.entity.getGuid()];
+            var actorid = actor.entity.getGuid();
+            var actorHUDdata = this.combatactors[actorid];
+            this.container.removeChild(actorHUDdata.HUD);
+
+            delete this.combatactors[actorid];
         },
 
         setText: function (message) {
             this.div.innerHTML = message;
-        }
+        },
+
+        setTitleText: function (titletext, fadeout) {
+            this.centertitle.innerHTML = titletext;
+            this.centertitle.style.visibility = 'visible';
+            this.fadetitle = fadeout;
+            this.fadetitletime = 2.0;
+        },
     };
 
     return gameHUD;
