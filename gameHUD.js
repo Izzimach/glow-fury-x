@@ -19,7 +19,12 @@ pc.script.create('gameHUD', function (context) {
         ".combatactorbox { pointer-events:none; margin:0px; background: green; width: 100%; height: 100%; border: 0px; } " +
 
         ".centertitle { pointer-events:none; position:absolute; top:0; bottom:0; left:0; right:0; background: transparent; margin:auto; border: 0px; text-align:center; width:30%; height:20%;"+
-        " font-size:xx-large; color:white; transform: scale(2,2); } ";
+        " font-size:xx-large; color:white; transform: scale(2,2); } " +
+        ".instructions { z-index:1; position:absolute; top:0; bottom:0; left:0; right:0; margin:auto; border: 12px solid black; background: white; color: black; border-radius: 8px; width:90%; height: 90%; text-align:center; }" +
+        ".fitimage { width:60%; }" +
+        ".fitimage2 { width:25%; }" +
+        ".basicbutton { width:150px; height:80px; border: 8px solid blue; background: blue; color:white; font-size:large;77}" +
+        ".restartbutton { position:absolute; bottom:20%; left:0; right:0; margin:auto;}";
 
         var gameHUD = function (entity) {
         this.entity = entity;
@@ -31,7 +36,7 @@ pc.script.create('gameHUD', function (context) {
     };
 
     var multiplyMatVec3 = function(v,vw,m,r) {
-            if(typeof r === "undefined") {
+            if(typeof r === 'undefined') {
               r = pc.math.vec4.create()
             }
             var x, y, z;
@@ -69,9 +74,12 @@ pc.script.create('gameHUD', function (context) {
             document.getElementsByTagName("head")[0].appendChild(style);
             console.log("added css");
 
-            // Create a div centred inside the main canvas
-            var div = document.createElement('div');
-            div.className = "gesturebarframe";
+            //
+            // gesture bar show how much gesture is left
+            //
+
+            var gesturebar = document.createElement('div');
+            gesturebar.className = "gesturebarframe";
             /*div.style.position = 'absolute';
             div.style.width = '500px';
             div.style.top = '90%';
@@ -80,17 +88,15 @@ pc.script.create('gameHUD', function (context) {
             div.style.textAlign = 'center';
             div.style.color = 'white';
             div.style.fontSize = 'xx-large';*/
-            div.style.visibility = 'hidden';
+            gesturebar.style.visibility = 'hidden';
 
-            // create a sub-rectangle that will get re-size to show how much gesture is left
             var valuebar = document.createElement('div');
             valuebar.className = 'gesturebarbox'
-            div.appendChild(valuebar);
+            gesturebar.appendChild(valuebar);
 
-            // Grab the div that encloses PlayCanvas' canvas element
-            this.container.appendChild(div);
+            this.container.appendChild(gesturebar);
 
-            this.gestureframe = div;
+            this.gestureframe = gesturebar;
             this.gesturebar = valuebar;
 
             // Set some default state on the UI element
@@ -99,12 +105,40 @@ pc.script.create('gameHUD', function (context) {
 
             this.HUDcamera = this.entity.getRoot().findByName("Camera");
 
+            // displays player/computer turn and victory/defeat text
             var titleblock = document.createElement('div');
             titleblock.className = 'centertitle';
             titleblock.style.visibility = 'hidden';
             this.container.appendChild(titleblock);
 
             this.centertitle = titleblock;
+
+            // displays instructions
+
+            // first find the images we need
+            var images = ['instructions1', 'instructions2'];
+            var allassetdata = context.assets.all();
+            var nametoasset = function (findname) { return _.find(allassetdata, function(d) { return d.name === findname; })};
+            var assettoURL = function(asset) { return asset.getFileUrl(); };
+            var imageURLs = images.map(nametoasset).map(assettoURL);
+
+            // yuck
+
+            var instructions = document.createElement('div');
+            instructions.id = "instructions";
+            instructions.className = 'instructions';
+            instructions.style.visibility = 'visible';
+            instructions.innerHTML = '<h1>How to Play</h1>' +
+                '<p>To charge, drag the mouse from your character to the target enemy.</p>' +
+                '<img class="fitimage" src="' + imageURLs[0] + '" /><br>' +
+                '<p>After charging, tap the target to attack with quick strikes.</p>' +
+                '<img class="fitimage2" src="' + imageURLs[1] + '" /><br>' + 
+                '<button class="basicbutton" type="button" onclick="document.getElementById(\'instructions\').style.visibility = \'hidden\';">Start!</button>';
+
+            this.container.insertBefore(instructions, this.container.firstChild);
+
+            // button to press which restarts
+
         },
 
         getComponentReference: function () {
@@ -191,6 +225,17 @@ pc.script.create('gameHUD', function (context) {
             this.fadetitle = fadeout;
             this.fadetitletime = 2.0;
         },
+
+        addRestartButton: function() {
+            var restartbutton = document.createElement('button');
+            restartbutton.className = 'basicbutton restartbutton';
+            restartbutton.innerHTML = "Restart!";
+            restartbutton.onclick = function() {window.location.reload();};
+            restartbutton.style.visibility = 'visible';
+
+            this.container.insertBefore(restartbutton, this.container.firstChild);
+
+        }
     };
 
     return gameHUD;

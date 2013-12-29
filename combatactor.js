@@ -10,6 +10,7 @@ pc.script.create('combatactor', function (context) {
             defaultanimationspeed: 0.7,
             chargeattack: {
                 animationname: 'bard_flipstrike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.7,
                 animationspeed: 5,
                 screenshakeat: 0.25,
@@ -17,6 +18,7 @@ pc.script.create('combatactor', function (context) {
             },
             strike: {
                 animationname: 'bard_strike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.5,
                 animationspeed: 10,
                 screenshakeat: 0.15,
@@ -24,17 +26,19 @@ pc.script.create('combatactor', function (context) {
             },
             strike2: {
                 animationname: 'bard_spinstrike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
-                damageamount: 1,
+                damageamount: 2,
             },
             strike3: {
                 animationname: 'bard_bigstrike',
+                attacksound: 'sword clang 1',
                 animationduration: 0.5,
                 animationspeed: 8,
                 screenshakeat: 0.1,
-                damageamount: 1,
+                damageamount: 3,
             }
         },
         'Goblin': {
@@ -42,12 +46,13 @@ pc.script.create('combatactor', function (context) {
             defaultteam: "monsters",
             defaultanimation: 'bard_idle',
             defaultanimationspeed: 0.6,
-            strike1: {
+            strike: {
                 animationname: 'bard_bigstrike',
+                attacksound: 'clonk',
                 animationduration: 0.4,
                 animationspeed: 4,
-                screenshakeat: 0,
-                damageamount: 1
+                screenshakeat: 0.2,
+                damageamount: 1.5
             }
         }
     };
@@ -67,6 +72,20 @@ pc.script.create('combatactor', function (context) {
                 linkCollidersToCombatActor(currentnodechildren[ix], linkto);
             }
         }
+    }
+
+    function disableChildColliders(currentnode) {
+        currentnode.script.send('combatactorcollider','disableCollider');
+        var currentnodechildren = currentnode.getChildren();
+        for (var ix=0; ix < currentnodechildren.length; ix++) {
+            var childnode = currentnodechildren[ix];
+            // only look for colliders on entity objects
+            if (pc.fw.Entity.prototype.isPrototypeOf(childnode))
+            {
+                disableChildColliders(currentnodechildren[ix]);
+            }
+        }
+
     }
     
     // Creates a new Gestureprocessor instance
@@ -136,7 +155,11 @@ pc.script.create('combatactor', function (context) {
             {
                 this.combocount = (this.combocount % 3) + 1;
                 if (this.combocount > 1) {
-                    actionname = "strike" + this.combocount.toString();
+                    var comboactionname = "strike" + this.combocount.toString();
+                    // don't use unless the combo action is available
+                    if (typeof this.descriptor[comboactionname] !== "undefined") {
+                        actionname = comboactionname;
+                    }
                 }
             }
             else
@@ -162,6 +185,11 @@ pc.script.create('combatactor', function (context) {
                 if (actiondata.damageamount) {
                     actiontarget.applyDamage(actiondata.damageamount, this);
                 }
+
+                // play sound?
+                if (actiondata.attacksound) {
+                    this.entity.audiosource.play(actiondata.attacksound);
+                }
             }
         },
 
@@ -181,6 +209,7 @@ pc.script.create('combatactor', function (context) {
             this.isalive = false;
             var mainscenenode = this.entity.getRoot().findByName("Combat Scene");
             mainscenenode.script.send('gameHUD', 'removeCombatActor', this);
+            disableChildColliders(this.entity);
 
         },
 
@@ -216,9 +245,17 @@ pc.script.create('combatactor', function (context) {
 
         chargeTarget: function (targetactor) {
             // charge to the nearest side
+            var mylocation = this.entity.getPosition();
             var targetlocation = targetactor.entity.getPosition();
-            targetx = targetlocation[0] - 3.3;
+            targetx = targetlocation[0];
+
+            if (targetx < mylocation[0]) { targetx += 3.5; }
+            else if (targetx > mylocation[0]) { targetx -= 3.5; }
             this.dashTo(targetx, targetlocation[1], targetlocation[2]);
+        },
+
+        moveTo: function (targetlocation) {
+            this.dashTo(targetlocation[0], targetlocation[1], targetlocation[2]);
         },
 
         manageDashing: function (dt) {
