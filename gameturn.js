@@ -40,6 +40,7 @@ pc.script.create('gameturn', function (context) {
                     // all enemies dead?
                     if (!this.anyLeftOnTeam("monsters")) {
                         this.gameHUD.setTitleText("Victory!");
+                        this.gameHUD.addRestartButton();
                         this.switchTurn("gameover");
                     }
                     break;
@@ -61,6 +62,7 @@ pc.script.create('gameturn', function (context) {
                     // player dead?
                     if (!this.anyLeftOnTeam("player")) {
                         this.gameHUD.setTitleText("Defeat!");
+                        this.gameHUD.addRestartButton();
                         this.switchTurn("gameover");
                     }
                     break;
